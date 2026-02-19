@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum WorkflowStatus {
+  Pending
+  Washing
+  Drying
+  Ready
+  PickedUp
+}
+
+model Staff {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  createdAt DateTime @default(now())
+}
+
+model Customer {
+  id            String   @id @default(uuid())
+  name          String
+  phone         String   @unique
+  loyaltyPoints Int      @default(0)
+  orders        Order[]
+  createdAt     DateTime @default(now())
+}
+
+model Order {
+  id            String         @id @default(uuid())
+  customerId    String
+  customer      Customer       @relation(fields: [customerId], references: [id])
+  services      String[]
+  weightKg      Float
+  amount        Float
+  paymentMethod String
+  status        WorkflowStatus @default(Pending)
+  createdAt     DateTime       @default(now())
+}
+
+model InventoryItem {
+  id        String   @id @default(uuid())
+  name      String
+  stock     Int
+  unit      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
