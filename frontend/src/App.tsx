@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { KpiCard } from './components/KpiCard';
 import { initialCustomers, initialOrders, services } from './data/mockData';
 import type { Customer, Order, PaymentType, ServiceType, WorkflowStatus } from './types';
@@ -24,6 +24,8 @@ export default function App() {
     () => localStorage.getItem('staffLoggedIn') === 'true'
   );
 
+  const [route, setRoute] = useState(() => window.location.pathname || '/login');
+
   const [loginUsername, setLoginUsername] = useState('admin');
   const [loginPassword, setLoginPassword] = useState('admin');
   const [loginError, setLoginError] = useState('');
@@ -41,6 +43,23 @@ export default function App() {
   const [newCustomerPhone, setNewCustomerPhone] = useState('');
   const [smsLogs, setSmsLogs] = useState<string[]>([]);
 
+  useEffect(() => {
+    const onPopState = () => setRoute(window.location.pathname || '/login');
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  useEffect(() => {
+    if (!isLoggedIn && route !== '/login') {
+      window.history.replaceState({}, '', '/login');
+      setRoute('/login');
+    }
+    if (isLoggedIn && route === '/login') {
+      window.history.replaceState({}, '', '/pos');
+      setRoute('/pos');
+    }
+  }, [isLoggedIn, route]);
+
   const totalAmount = useMemo(() => {
     const basePrice = selectedServices.reduce((sum, s) => {
       const match = services.find((item) => item.name === s);
@@ -54,24 +73,12 @@ export default function App() {
   const formatAmount = (amount: number) =>
     `${currencySymbol[currency]}${amount.toFixed(2)}`;
 
-  const dashboard = useMemo(() => {
-    const totalPhpSales = orders.reduce((sum, order) => sum + order.amount, 0);
-    const todaySales = totalPhpSales * conversionRate[currency];
-    const monthlySales = todaySales * 24;
-
-    return {
-      todaySales,
-      monthlySales,
-      topService: 'Wash + Dry',
-      readyForPickup: orders.filter((o) => o.status === 'Ready').length,
-      pickedUp: orders.filter((o) => o.status === 'Picked up').length,
-    };
-  }, [orders, currency]);
-
   const login = () => {
     if (loginUsername === 'admin' && loginPassword === 'admin') {
       setIsLoggedIn(true);
       localStorage.setItem('staffLoggedIn', 'true');
+      window.history.pushState({}, '', '/pos');
+      setRoute('/pos');
       setLoginError('');
     } else {
       setLoginError('Invalid staff account. Use admin / admin.');
@@ -166,36 +173,8 @@ export default function App() {
   };
 
   if (!isLoggedIn) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-100 p-6">
-        <div className="bg-white p-6 rounded-xl shadow">
-          <h1 className="text-xl font-semibold">Staff Login</h1>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              login();
-            }}
-          >
-            <input
-              className="border p-2 mt-2 w-full"
-              value={loginUsername}
-              onChange={(e) => setLoginUsername(e.target.value)}
-            />
-            <input
-              type="password"
-              className="border p-2 mt-2 w-full"
-              value={loginPassword}
-              onChange={(e) => setLoginPassword(e.target.value)}
-            />
-            {loginError && <p className="text-red-500">{loginError}</p>}
-            <button className="bg-indigo-600 text-white px-4 py-2 mt-3">
-              Login
-            </button>
-          </form>
-        </div>
-      </div>
-    );
+    return <div className="p-6">Login screen here...</div>;
   }
 
-  return <div className="p-6">Laundry POS Running...</div>;
+  return <div className="p-6">Laundry POS UI here...</div>;
 }
